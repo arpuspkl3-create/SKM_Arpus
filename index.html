@@ -299,7 +299,7 @@
             <div class="emoji-grid" id="q6">
                 <div class="emoji-item" onclick="pilih(this, 'q6', 100)"><span>😍</span><b>Sangat Kompeten</b></div>
                 <div class="emoji-item" onclick="pilih(this, 'q6', 75)"><span>😊</span><b>Kompeten</b></div>
-                <div class="emoji-item" onclick="pilih(this, 'q6', 50)"><span>😐</span><b>Kurang Kopenten</b></div>
+                <div class="emoji-item" onclick="pilih(this, 'q6', 50)"><span>😐</span><b>Kurang Kompeten</b></div>
                 <div class="emoji-item" onclick="pilih(this, 'q6', 25)"><span>☹️</span><b>Tidak Kompeten</b></div>
             </div>
              <button class="btn" onclick="nextQ(7)">SELANJUTNYA</button>
@@ -360,7 +360,11 @@
         <div style="text-align:center; margin-bottom:20px;">
             Filter Tahun: <select id="fTahun" onchange="renderRekap()" style="width:120px;"></select>
         </div>
-        <div class="card-indeks"><small>IKM RATA-RATA</small><div id="rAvg">0%</div></div>
+        <div class="card-indeks" id="kotak-skor">
+    <small id="label-laporan">IKM RATA-RATA KESELURUHAN</small>
+    <div id="rAvg">Memuat...</div> 
+    <div id="predikat-teks" style="font-size: 18px; margin-top: 10px; font-weight: bold;"></div>
+</div>
         
         <div id="adminArea" style="display:none;">
             <div class="table-container">
@@ -399,10 +403,11 @@
 </div>
 
 <script>
-    let skor = { q1: 0, q2: 0, q3: 0, q4: 0,q5: 0, q6: 0, q7: 0, q8: 0,q9: 0};
+    let skor = { q1: 0, q2: 0, q3: 0, q4: 0, q5: 0, q6: 0, q7: 0, q8: 0, q9: 0 };
     const TAHUN_INI = new Date().getFullYear();
     let isAdmin = false;
-    const urlScript ="https://script.google.com/macros/s/AKfycbzETGJsY5nxCS8zKess3pyQ54SOOCJyrNZOgKp3Glutd1PHf8EFY_pAWvEywrd8TQJSJg/exec";
+    // PASTIKAN URL INI ADALAH HASIL DEPLOY "ANYONE" TERBARU
+    const urlScript = "https://script.google.com/macros/s/AKfycbzETGJsY5nxCS8zKess3pyQ54SOOCJyrNZOgKp3Glutd1PHf8EFY_pAWvEywrd8TQJSJg/exec";
 
     window.onload = function() {
         document.getElementById('thnKues').innerText = TAHUN_INI;
@@ -438,7 +443,7 @@
     }
 
     function konfirmasiSimpan() {
-        if(!skor.q4) return alert("Pilih penilaian terakhir!");
+        if(!skor.q9) return alert("Pilih penilaian terakhir!"); // Perbaikan Q9
         document.getElementById('modalKonfirmasi').style.display = 'flex';
     }
 
@@ -448,31 +453,69 @@
         tutupModal();
         document.getElementById('successOverlay').style.display = 'flex';
         
+        let namaUser = document.getElementById('nama').value;
         let db = JSON.parse(localStorage.getItem('dbArpusResmi')) || [];
-            db.push({
-    id: Date.now(),
-    n: document.getElementById('nama').value,
-    j: document.getElementById('jk').value,
-    w: document.getElementById('WA').value,        // Gunakan 'w' untuk WA (pastikan ID di HTML adalah 'WA')
-    p: document.getElementById('pekerjaan').value, // Gunakan 'p' untuk Pekerjaan
-    k: document.getElementById('kec').value,
-    l: document.getElementById('layanan').value,
-    y: TAHUN_INI,
-    s1: skor.q1, s2: skor.q2, s3: skor.q3, s4: skor.q4, s5: skor.q5, s6: skor.q6, s7: skor.q7, s8: skor.q8,s9: skor.q9,
-    saran: document.getElementById('Saran').value
-});
-   fetch(urlScript, {
-        method: 'POST',
-        mode: 'no-cors',
-        body: JSON.stringify(db[db.length - 1])
-    })
-    .then(() => console.log("Berhasil terkirim!"))
-    .catch(e => console.error("Gagal!", e));
+        
+        let dataBaru = {
+            id: Date.now(),
+            n: namaUser,
+            j: document.getElementById('jk').value,
+            w: document.getElementById('WA').value,
+            p: document.getElementById('pekerjaan').value,
+            k: document.getElementById('kec').value,
+            l: document.getElementById('layanan').value,
+            y: TAHUN_INI,
+            s1: skor.q1, s2: skor.q2, s3: skor.q3, s4: skor.q4, 
+            s5: skor.q5, s6: skor.q6, s7: skor.q7, s8: skor.q8, s9: skor.q9,
+            saran: document.getElementById('Saran').value
+        };
+
+        db.push(dataBaru);
         localStorage.setItem('dbArpusResmi', JSON.stringify(db));
-        setTimeout(() => { location.reload(); }, 3000);
+
+        // PROSES KIRIM KE GOOGLE SHEETS
+        fetch(urlScript, {
+            method: 'POST',
+            mode: 'no-cors',
+            body: JSON.stringify(dataBaru)
+        })
+        .then(() => {
+            console.log("Berhasil terkirim!");
+            setTimeout(() => {
+                window.location.href = "terimakasih.html?nama=" + encodeURIComponent(namaUser);
+            }, 1500);
+        })
+        .catch(e => {
+            console.error("Gagal kirim!", e);
+            alert("Koneksi gagal, data disimpan di lokal.");
+        });
     }
 
-    function goRekap() { go('Rekap'); renderRekap(); }
+   async function goRekap() { 
+    go('Rekap'); 
+    renderRekap(); 
+    
+    // Kita panggil urlScript yang sudah kamu pasang di atas
+    try {
+        const respon = await fetch(urlScript); 
+        const hasil = await respon.json();
+        
+        if (hasil && hasil.skor) {
+            // Mengubah angka dari Google Sheets ke tampilan persen di web
+            let nilaiFixed = parseFloat(hasil.skor).toFixed(2);
+            document.getElementById('rAvg').innerText = nilaiFixed + "%";
+            
+            // Predikat otomatis berdasarkan standar Permenpan
+            let pred = "BAIK";
+            if(nilaiFixed >= 88.31) pred = "SANGAT BAIK";
+            else if(nilaiFixed < 76.61) pred = "KURANG BAIK";
+            document.getElementById('predikat-teks').innerText = pred;
+        }
+    } catch (e) {
+        console.error("Gagal koneksi ke link:", e);
+    }
+}
+    
 
     function loginAdmin() {
         let pass = prompt("Masukkan Password Admin:");
@@ -491,11 +534,11 @@
         let filter = document.getElementById('fTahun').value;
         let filtered = db.filter(i => i.y == filter);
         let body = document.getElementById('tBody');
-        let totalAll = 0; body.innerHTML = "";
+        body.innerHTML = "";
 
         filtered.forEach((i) => {
-            let avg = Math.round((i.s1 + i.s2 + i.s3 + i.s4) / 4);
-            totalAll += avg;
+            // Pembagi diganti 9 sesuai jumlah soal
+            let avg = Math.round((i.s1 + i.s2 + i.s3 + i.s4 + i.s5 + i.s6 + i.s7 + i.s8 + i.s9) / 9);
             if(isAdmin) {
                 body.innerHTML += `<tr><td>${i.n}</td><td>${i.j}</td><td>${i.w}</td><td>${i.p}</td><td>${i.k}</td>
                     <td>${i.l}</td><td>${i.s1}%</td><td>${i.s2}%</td><td>${i.s3}%</td><td>${i.s4}%</td><td>${i.s5}%</td>
@@ -503,7 +546,6 @@
                     <td><b>${avg}%</b></td><td><button onclick="hapus(${i.id})">🗑️</button></td></tr>`;
             }
         });
-        document.getElementById('rAvg').innerText = (filtered.length > 0 ? Math.round(totalAll / filtered.length) : 0) + "%";
     }
 
     function hapus(id) {
