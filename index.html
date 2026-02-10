@@ -382,6 +382,9 @@
             <button class="btn btn-back" onclick="go(1)">KEMBALI KE BERANDA</button>
             <button id="btnLogin" class="btn" onclick="loginAdmin()">ADMIN LOGIN</button>
         </div>
+     </div> <div style="text-align: center; padding: 20px; color: #666; font-size: 16px; border-top: 1px solid #eee; margin-top: 30px;">
+    </span> Dinas Kearsipan dan Perpustakaan Kabupaten Pekalongan &copy; <span id="copyYear"></span><br>
+    </div>   
     </div>
 </div>
 
@@ -402,7 +405,9 @@
     <p style="font-size:18px; color:#666;">Data Anda telah berhasil disimpan.</p>
 </div>
 
+
 <script>
+    document.getElementById('copyYear').innerText = new Date().getFullYear();
     let skor = { q1: 0, q2: 0, q3: 0, q4: 0, q5: 0, q6: 0, q7: 0, q8: 0, q9: 0 };
     const TAHUN_INI = new Date().getFullYear();
     let isAdmin = false;
